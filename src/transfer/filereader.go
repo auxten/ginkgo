@@ -14,7 +14,6 @@ type TransFile struct {
 }
 
 func (f TransFile) Read(r *os.File) (error) {
-
 	return nil
 }
 
