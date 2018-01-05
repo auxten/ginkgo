@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	log "github.com/auxten/logrus"
 	//"github.com/dixonwille/skywalker"
+	"github.com/auxten/gink-go/src/util"
 )
 
 type FileType int
@@ -16,43 +17,44 @@ type FileInfo struct {
 }
 
 type BlockInfo struct {
-	StartFileIndex int64
-	StartOffset    int64
+	FileIndex int64
+	Offset    int64
 }
 
 type Seed struct {
-	BlockSize  int64
-	BlockCount int64
-	FileList   []FileInfo
-	BlockList  []BlockInfo
+	BlockSize     int64
+	BlockCount    int64
+	FileList      []FileInfo
+	BlockList     []BlockInfo
+	TotalFileSize int64
 }
 
 func NewSeed(blockSize int64) Seed {
 	return Seed{
-		BlockSize:  blockSize,
-		BlockCount: -1,
-		FileList:   []FileInfo{},
-		BlockList:  []BlockInfo{},
+		BlockSize:     blockSize,
+		BlockCount:    -1,
+		FileList:      []FileInfo{},
+		BlockList:     []BlockInfo{},
+		TotalFileSize: 0,
 	}
 }
 
 func (s *Seed) MakeSeed(rootPath string) (err error) {
-	var totalFileSize int64
 	filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
-		log.Debug(info.Mode()&os.ModeType == 0, path)
+		log.Debug(util.IsFile(info.Mode()), path)
 		s.FileList = append(s.FileList, FileInfo{
 			Path: path,
 			Size: info.Size(),
 			Mode: info.Mode(),
 		})
-		if info.Mode()&os.ModeType == 0 {
-			totalFileSize += info.Size()
+		if util.IsFile(info.Mode()) {
+			s.TotalFileSize += info.Size()
 		}
 		return nil
 	})
 
 	log.Debug(s.FileList)
-	log.Debug("totalFileSize ", totalFileSize)
+	log.Debug("totalFileSize ", s.TotalFileSize)
 
 	//var (
 	//	totalBlockSize int64
