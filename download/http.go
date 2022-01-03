@@ -25,11 +25,10 @@ func (down *HttpDownloader) DownOffset(uri string, start int64, end int64) (r io
 	if url, err = url.Parse(uri); err != nil {
 		return
 	}
-	SetByteRange(header, start, end)
 	if resp, err = down.client.Do(&http.Request{
 		Method: "GET",
 		URL:    url,
-		Header: header,
+		Header: SetByteRange(header, start, end),
 		Close:  false,
 	}); err != nil {
 		return
