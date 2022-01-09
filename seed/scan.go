@@ -4,21 +4,22 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-
-	log "github.com/auxten/logrus"
 )
 
-func MakeSeed(dir string, blockSize int64) (seed *Seed, err error) {
-	seed = new(Seed)
+func MakeSeed(path string, blockSize int64) (*Seed, error) {
+	seed := new(Seed)
 	if blockSize > 0 {
 		seed.BlockSize = blockSize
 	} else {
 		seed.BlockSize = DefaultBlockSize
 	}
-	err = filepath.WalkDir(dir, getWalkFunc(seed))
+	if err := filepath.WalkDir(path, getWalkFunc(seed)); err != nil {
+		return nil, err
+	}
 
 	seed.Blocks[len(seed.Blocks)-1].Size = seed.TotalSize % seed.BlockSize
-	return
+
+	return seed, nil
 }
 
 func getWalkFunc(s *Seed) func(string, fs.DirEntry, error) error {
@@ -34,8 +35,13 @@ func getWalkFunc(s *Seed) func(string, fs.DirEntry, error) error {
 			size    int64
 			symPath string
 		)
-		fInfo, err = entry.Info()
-		log.Debugf("%s %d", path, fInfo.Size())
+		if entry == nil {
+			return err
+		}
+		if fInfo, err = entry.Info(); err != nil {
+			return err
+		}
+		//log.Debugf("%s %d", path, fInfo.Size())
 		if err != nil {
 			return err
 		}
