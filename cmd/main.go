@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/auxten/ginkgo/fileserv"
@@ -73,9 +72,10 @@ func main() {
 
 	e.Use(middleware.Recover())
 
-	e.GET("/api/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "OK")
-	})
+	e.GET("/api/seed", fileserv.SeedApi(root))
+	e.GET("/api/block", fileserv.BlockApi(root))
 
-	fileserv.ServFiles(e, root, addr)
+	fileserv.ServFiles(e, root)
+
+	e.Logger.Fatal(e.Start(addr))
 }
