@@ -7,9 +7,9 @@ import (
 
 	"github.com/auxten/ginkgo/fileserv"
 	"github.com/auxten/ginkgo/logwrap"
-	log "github.com/auxten/logrus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
