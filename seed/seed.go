@@ -39,10 +39,10 @@ type Host struct {
 }
 
 type Block struct {
-	Size        int64 `json:"size"`
-	StartFile   int   `json:"startFile"`
-	StartOffset int64 `json:"startOffset"`
-	Done        bool
+	Size        int64  `json:"size"`
+	StartFile   int    `json:"startFile"`
+	StartOffset int64  `json:"startOffset"`
+	Done        bool   `json:"-"`
 	CheckSum    []byte `json:"checkSum"`
 	hosts       map[Host]bool
 }

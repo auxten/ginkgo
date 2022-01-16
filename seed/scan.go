@@ -14,6 +14,7 @@ func MakeSeed(path string, blockSize int64) (*Seed, error) {
 	} else {
 		seed.BlockSize = DefaultBlockSize
 	}
+
 	if err := filepath.WalkDir(path, getWalkFunc(seed)); err != nil {
 		return nil, err
 	}
