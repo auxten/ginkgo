@@ -22,7 +22,7 @@ func MakeSeed(path string, blockSize int64) (*Seed, error) {
 	return seed, nil
 }
 
-func getWalkFunc(s *Seed) func(string, fs.DirEntry, error) error {
+func getWalkFunc(s *Seed) fs.WalkDirFunc {
 	var (
 		seed          = s
 		lastTotalSize int64
@@ -76,6 +76,7 @@ func getWalkFunc(s *Seed) func(string, fs.DirEntry, error) error {
 					Size:        seed.BlockSize,
 					StartFile:   len(seed.Files) - 1,
 					StartOffset: startOffset,
+					Done:        true,
 				})
 			}
 		}

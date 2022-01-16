@@ -10,6 +10,7 @@ var (
 )
 
 type Seed struct {
+	Path      string   `json:"path"`
 	FileCount int      `json:"fileCount"`
 	Files     []*File  `json:"files"`
 	Blocks    []*Block `json:"blocks"`
@@ -41,7 +42,7 @@ type Block struct {
 	Size        int64 `json:"size"`
 	StartFile   int   `json:"startFile"`
 	StartOffset int64 `json:"startOffset"`
-	done        bool
+	Done        bool
 	CheckSum    []byte `json:"checkSum"`
 	hosts       map[Host]bool
 }
