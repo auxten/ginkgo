@@ -7,6 +7,7 @@ import (
 )
 
 func MakeSeed(path string, blockSize int64) (*Seed, error) {
+	path = filepath.Clean(path)
 	seed := new(Seed)
 	if blockSize > 0 {
 		seed.BlockSize = blockSize
