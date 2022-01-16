@@ -11,7 +11,6 @@ import (
 
 	"github.com/auxten/ginkgo/seed"
 	"github.com/labstack/echo/v4"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,6 +26,10 @@ var (
 )
 
 func SeedApi(root string) func(echo.Context) error {
+	if er := os.Chdir(root); er != nil {
+		log.Fatal(er)
+	}
+
 	return func(c echo.Context) (err error) {
 		var (
 			bs   int64 = -1
@@ -37,7 +40,8 @@ func SeedApi(root string) func(echo.Context) error {
 		if len(path) == 0 {
 			return c.String(http.StatusNotFound, "need path query param")
 		}
-		if val, ok := sds.Load(path); ok {
+		cleanPath := filepath.Clean(path)
+		if val, ok := sds.Load(cleanPath); ok {
 			sd = val.(*seed.Seed)
 			log.Debugf("cached seed: %s", path)
 		} else {
@@ -47,14 +51,13 @@ func SeedApi(root string) func(echo.Context) error {
 						fmt.Sprintf("invalid block Size bs: %v", blockSize))
 				}
 			}
-			jailedPath := filepath.Join(root, path)
-			log.Debugf("making seed for path: %s", jailedPath)
-			if sd, err = seed.MakeSeed(jailedPath, bs); err != nil {
+			log.Debugf("making seed for path: %s", cleanPath)
+			if sd, err = seed.MakeSeed(cleanPath, bs); err != nil {
 				return c.String(http.StatusInternalServerError, err.Error())
 			}
-			sd.Path = path
+			sd.Path = cleanPath
 
-			sds.Store(path, sd)
+			sds.Store(cleanPath, sd)
 		}
 		return c.JSON(http.StatusOK, sd)
 	}
@@ -122,7 +125,7 @@ func sendBlock(blockId int64, count int64, sd *seed.Seed, root string, respWrite
 		totalSent int64
 	)
 	if blockId+count > int64(len(sd.Blocks)) {
-		return errors.Errorf("block count cnt %d out of range", count)
+		return fmt.Errorf("block count cnt %d out of range", count)
 	}
 	if count <= 0 {
 		count = int64(len(sd.Blocks)) - blockId
