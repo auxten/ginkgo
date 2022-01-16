@@ -13,7 +13,7 @@ type HttpDownloader struct {
 	client *http.Client
 }
 
-func (down *HttpDownloader) DownOffset(uri string, start int64, end int64) (r io.Reader, err error) {
+func (down *HttpDownloader) DownOffset(uri string, start int64, end int64) (r io.ReadCloser, err error) {
 	down.Do(func() {
 		down.client = &http.Client{}
 	})

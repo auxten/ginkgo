@@ -31,6 +31,7 @@ func TestHttpDownloader_DownOffset(t *testing.T) {
 			n, err = r.Read(buf)
 			h.Write(buf[:n])
 		}
+		_ = r.Close()
 		So(hex.EncodeToString(h.Sum(nil)), ShouldResemble, md5sum)
 	})
 
@@ -48,6 +49,7 @@ func TestHttpDownloader_DownOffset(t *testing.T) {
 			n, err = r.Read(buf)
 			h.Write(buf[:n])
 		}
+		_ = r.Close()
 		So(hex.EncodeToString(h.Sum(nil)), ShouldResemble, "23c12b79ca4dee716f43b9fef10b296d")
 	})
 
@@ -65,6 +67,7 @@ func TestHttpDownloader_DownOffset(t *testing.T) {
 			n, err = r.Read(buf)
 			h.Write(buf[:n])
 		}
+		_ = r.Close()
 		So(hex.EncodeToString(h.Sum(nil)), ShouldResemble, "08581bfce36b88261f1158c2b01efa82")
 	})
 
