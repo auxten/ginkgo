@@ -1,4 +1,4 @@
-package path
+package srcdest
 
 import (
 	"fmt"
@@ -11,23 +11,23 @@ func TestName(t *testing.T) {
 		cSrcType, cDestType PathType
 		src, dest           string
 	}{
-		{"./src", "./dest", FileType, NotExists, "./src", "dest"},
+		{"./src", "./dest", FileType, NotExist, "./src", "dest"},
 		{"./src", "./dest", FileType, FileType, "./src", "dest"},
 		{"./src", "./dest", FileType, DirType, "./src", "dest/src"},
-		{"./src", "./dest/", FileType, NotExists, "./src", ""}, //error
-		{"./src", "./dest/", FileType, FileType, "./src", ""},  //error
+		{"./src", "./dest/", FileType, NotExist, "./src", ""}, //error
+		{"./src", "./dest/", FileType, FileType, "./src", ""}, //error
 		{"./src", "./dest/", FileType, DirType, "./src", "dest/src"},
-		{"./src", "./dest", DirType, NotExists, "./src/file", "dest/file"},
+		{"./src", "./dest", DirType, NotExist, "./src/file", "dest/file"},
 		{"./src", "./dest", DirType, FileType, "./src/file", ""}, //error
 		{"./src", "./dest", DirType, DirType, "./src/file", "dest/src/file"},
-		{"./src", "./dest/", DirType, NotExists, "./src/file", "dest/file"},
+		{"./src", "./dest/", DirType, NotExist, "./src/file", "dest/file"},
 		{"./src", "./dest/", DirType, FileType, "./src/file", ""}, //error
 		{"./src", "./dest/", DirType, DirType, "./src/file", "dest/src/file"},
 		// Long path cases
-		{"./srcDir/src", "./destDir/dest", FileType, NotExists, "./srcDir/src", "destDir/dest"},
-		{"./src", "./dest", DirType, NotExists, "./src/srcDir/file", "dest/srcDir/file"},
-		{"./src", "./xxx/../dest", DirType, NotExists, "./src/srcDir/file", "dest/srcDir/file"},
-		{"./src", "./destDir/dest", DirType, NotExists, "./src/srcDir/file", "destDir/dest/srcDir/file"},
+		{"./srcDir/src", "./destDir/dest", FileType, NotExist, "./srcDir/src", "destDir/dest"},
+		{"./src", "./dest", DirType, NotExist, "./src/srcDir/file", "dest/srcDir/file"},
+		{"./src", "./xxx/../dest", DirType, NotExist, "./src/srcDir/file", "dest/srcDir/file"},
+		{"./src", "./destDir/dest", DirType, NotExist, "./src/srcDir/file", "destDir/dest/srcDir/file"},
 		// Other error cases
 		{"./src", "", FileType, DirType, "./notSrc", ""},
 	}

@@ -1,4 +1,4 @@
-package path
+package srcdest
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 type PathType int
 
 const (
-	NotExists PathType = iota
+	NotExist PathType = iota
 	FileType
 	DirType
 )
@@ -26,14 +26,14 @@ func NormalizeDestPath(cmdSrcPath, origCmdDestPath string, cmdSrcType, cmdDestTy
 	if len(origCmdDestPath) > 1 && origCmdDestPath[len(origCmdDestPath)-1] == '/' {
 		cmdDestPath = cmdDestPath + "/"
 	}
-	if !strings.HasPrefix(srcPath, cmdSrcPath) {
+	if cmdSrcPath != "." && !strings.HasPrefix(srcPath, cmdSrcPath) {
 		return "", fmt.Errorf(
 			"src path %s not started with cmd src path %s", srcPath, cmdSrcPath)
 	}
 	switch cmdSrcType {
 	case FileType:
 		switch cmdDestType {
-		case NotExists, FileType:
+		case NotExist, FileType:
 			if cmdDestPath[len(cmdDestPath)-1] == '/' {
 				err = fmt.Errorf("dest %s not dir", cmdDestPath)
 			} else {
@@ -46,7 +46,7 @@ func NormalizeDestPath(cmdSrcPath, origCmdDestPath string, cmdSrcType, cmdDestTy
 		}
 	case DirType:
 		switch cmdDestType {
-		case NotExists:
+		case NotExist:
 			var relPath string
 			if relPath, err = filepath.Rel(cmdSrcPath, srcPath); err == nil {
 				destPath = filepath.Join(cmdDestPath, relPath)
