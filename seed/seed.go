@@ -1,6 +1,10 @@
 package seed
 
 import (
+	"crypto/sha256"
+	"fmt"
+	"hash/crc32"
+	"hash/fnv"
 	"os"
 	"time"
 )
@@ -45,4 +49,36 @@ type Block struct {
 	Done        bool   `json:"-"`
 	CheckSum    []byte `json:"checkSum"`
 	hosts       map[Host]bool
+}
+
+func (h Host) String() string {
+	return fmt.Sprintf("%d.%d.%d.%d:%d", h.IP[0], h.IP[1], h.IP[2], h.IP[3], h.Port)
+}
+
+// Hash uses HashCrc which has better uniformity
+func (h Host) Hash(vIndex byte) uint32 {
+	return h.HashCrc(vIndex)
+}
+
+func (h Host) HashFnv(vIndex byte) uint32 {
+	hash := fnv.New32a()
+	_, _ = hash.Write(h.IP[:])
+	_, _ = hash.Write([]byte{byte(h.Port / 256), byte(h.Port % 256), vIndex})
+	return hash.Sum32()
+}
+
+func (h Host) HashCrc(vIndex byte) uint32 {
+	hash := crc32.New(crc32.MakeTable(crc32.Castagnoli))
+	_, _ = hash.Write(h.IP[:])
+	_, _ = hash.Write([]byte{byte(h.Port / 256), byte(h.Port % 256), vIndex})
+	return hash.Sum32()
+}
+
+func (h Host) HashSha(vIndex byte) uint32 {
+	hash := sha256.New()
+	_, _ = hash.Write(h.IP[:])
+	_, _ = hash.Write([]byte{byte(h.Port / 256), byte(h.Port % 256), vIndex})
+	hout := fnv.New32a()
+	hout.Write(hash.Sum(nil))
+	return hout.Sum32()
 }
