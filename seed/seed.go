@@ -43,12 +43,12 @@ type Host struct {
 }
 
 type Block struct {
-	Size        int64  `json:"size"`
-	StartFile   int    `json:"startFile"`
-	StartOffset int64  `json:"startOffset"`
-	Done        bool   `json:"-"`
-	CheckSum    []byte `json:"checkSum"`
-	hosts       map[Host]bool
+	Size        int64         `json:"size"`
+	StartFile   int           `json:"startFile"`
+	StartOffset int64         `json:"startOffset"`
+	Done        bool          `json:"-"`
+	CheckSum    []byte        `json:"checkSum"`
+	Hosts       map[Host]bool `json:"-"`
 }
 
 func (h Host) String() string {

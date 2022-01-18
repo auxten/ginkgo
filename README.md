@@ -8,7 +8,7 @@ Golang version of [gingko](https://github.com/auxten/gingko), the p2sp file tran
 
 - [x] HTTP range downloader
 - [x] HTTP file server
+- [x] Directory support
 - [ ] Consistent hashing locator
 - [ ] Client rate limit
 - [ ] Server rate limit
-- [ ] Directory support
