@@ -9,13 +9,15 @@ import (
 func TestHost_Hash(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	const (
-		size   = 256
-		vCount = 5
+		size      = 256
+		vCount    = 5
+		threshold = 20
 	)
 
 	var testData = []struct {
 		host Host
 	}{
+		{Host{[4]byte{0, 0, 0, 0}, 8080}},
 		{Host{[4]byte{127, 0, 0, 1}, 8080}},
 		{Host{[4]byte{192, 168, 0, 1}, 8080}},
 		{Host{[4]byte{192, 168, 0, 2}, 8080}},
@@ -42,7 +44,7 @@ func TestHost_Hash(t *testing.T) {
 				}
 			}
 		}
-		if counter > 10 {
+		if counter > threshold {
 			t.Errorf("collision count %d", counter)
 		}
 		log.Debugf("fnv collision count %d", counter)
@@ -62,7 +64,7 @@ func TestHost_Hash(t *testing.T) {
 				}
 			}
 		}
-		if counter > 10 {
+		if counter > threshold {
 			t.Errorf("collision count %d", counter)
 		}
 		log.Debugf("crc32 collision count %d", counter)
@@ -82,7 +84,7 @@ func TestHost_Hash(t *testing.T) {
 				}
 			}
 		}
-		if counter > 10 {
+		if counter > threshold {
 			t.Errorf("collision count %d", counter)
 		}
 		log.Debugf("sha256 collision count %d", counter)
