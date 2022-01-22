@@ -19,6 +19,8 @@ type writeFlusher interface {
 	http.ResponseWriter
 }
 
+const VNodeCount = uint8(3)
+
 var (
 	sds struct {
 		sync.Map // map[path]*Seed
@@ -56,6 +58,7 @@ func SeedApi(root string) func(echo.Context) error {
 				return c.String(http.StatusInternalServerError, err.Error())
 			}
 			sd.Path = cleanPath
+			sd.VNodeCount = VNodeCount
 
 			sds.Store(cleanPath, sd)
 		}
@@ -117,6 +120,27 @@ func BlockApi(root string) func(echo.Context) error {
 
 		return
 	}
+}
+
+func JoinApi() func(echo.Context) error {
+	return func(c echo.Context) (err error) {
+		var (
+			sd   *seed.Seed
+			path string
+		)
+		path = c.QueryParam("path")
+		if len(path) == 0 {
+			return c.String(http.StatusNotFound, "need path query param")
+		}
+		cleanPath := filepath.Clean(path)
+		if val, ok := sds.Load(cleanPath); ok {
+			sd = val.(*seed.Seed)
+		} else {
+			return c.String(http.StatusNotFound, fmt.Sprintf("seed for path: %s not found", cleanPath))
+		}
+		return c.JSON(http.StatusOK, sd)
+	}
+
 }
 
 func sendBlock(blockId int64, count int64, sd *seed.Seed, root string, respWriter writeFlusher) (err error) {

@@ -6,6 +6,7 @@ import (
 	"hash/crc32"
 	"hash/fnv"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -14,11 +15,13 @@ var (
 )
 
 type Seed struct {
-	Path      string   `json:"path"`
-	FileCount int      `json:"fileCount"`
-	Files     []*File  `json:"files"`
-	Blocks    []*Block `json:"blocks"`
-	BlockSize int64    `json:"blockSize"`
+	sync.RWMutex
+	Path       string   `json:"path"`
+	FileCount  int      `json:"fileCount"`
+	Files      []*File  `json:"files"`
+	Blocks     []*Block `json:"blocks"`
+	BlockSize  int64    `json:"blockSize"`
+	VNodeCount uint8    `json:"vnodeCount"`
 	//InitFileIdx   int      `json:"initFileIdx"`
 	//InitBlockIdx  int      `json:"initBlockIdx"`
 	TotalSize int64 `json:"totalSize"`
@@ -43,12 +46,12 @@ type Host struct {
 }
 
 type Block struct {
-	Size        int64         `json:"size"`
-	StartFile   int           `json:"startFile"`
-	StartOffset int64         `json:"startOffset"`
-	Done        bool          `json:"-"`
-	CheckSum    []byte        `json:"checkSum"`
-	Hosts       map[Host]bool `json:"-"`
+	Size        int64              `json:"size"`
+	StartFile   int                `json:"startFile"`
+	StartOffset int64              `json:"startOffset"`
+	Done        bool               `json:"-"`
+	CheckSum    []byte             `json:"checkSum"`
+	Hosts       map[Host]time.Time `json:"-"`
 }
 
 func (h Host) String() string {
