@@ -34,17 +34,28 @@ func SeedApi(root string) func(echo.Context) error {
 
 	return func(c echo.Context) (err error) {
 		var (
-			bs   int64 = -1
-			sd   *seed.Seed
-			path string
+			bs      int64 = -1
+			sd      *seed.Seed
+			path    string
+			hostStr string
+			host    seed.Host
 		)
+		hostStr = c.QueryParam("host")
+		if len(hostStr) == 0 {
+			return c.String(http.StatusBadRequest, "need host query param")
+		}
+		if host, err = seed.ParseHost(hostStr); err != nil {
+			return c.String(http.StatusBadRequest, fmt.Sprintf("bad host query param %s", err))
+		}
+
 		path = c.QueryParam("path")
 		if len(path) == 0 {
-			return c.String(http.StatusNotFound, "need path query param")
+			return c.String(http.StatusBadRequest, "need path query param")
 		}
 		cleanPath := filepath.Clean(path)
 		if val, ok := sds.Load(cleanPath); ok {
 			sd = val.(*seed.Seed)
+			sd.Hosts = sd.GetAllHosts()
 			log.Debugf("cached seed: %s", path)
 		} else {
 			if blockSize := c.QueryParam("bs"); len(blockSize) != 0 {
@@ -62,6 +73,7 @@ func SeedApi(root string) func(echo.Context) error {
 
 			sds.Store(cleanPath, sd)
 		}
+		sd.Add(host)
 		return c.JSON(http.StatusOK, sd)
 	}
 }
@@ -74,7 +86,17 @@ func BlockApi(root string) func(echo.Context) error {
 			sd      *seed.Seed
 			blockId int64
 			count   int64 // 0 means infinite till last block
+			hostStr string
+			host    seed.Host
 		)
+		hostStr = c.QueryParam("host")
+		if len(hostStr) == 0 {
+			return c.String(http.StatusBadRequest, "need host query param")
+		}
+		if host, err = seed.ParseHost(hostStr); err != nil {
+			return c.String(http.StatusBadRequest, fmt.Sprintf("bad host query param %s", err))
+		}
+
 		path = c.QueryParam("path")
 		if len(path) == 0 {
 			return c.String(http.StatusNotFound, "need path query param")
@@ -85,6 +107,7 @@ func BlockApi(root string) func(echo.Context) error {
 		} else {
 			sd = val.(*seed.Seed)
 		}
+		sd.Add(host)
 
 		id = c.QueryParam("id")
 		if len(id) == 0 {
@@ -122,25 +145,35 @@ func BlockApi(root string) func(echo.Context) error {
 	}
 }
 
+//JoinApi puts the host into the corresponding seed of path, and return all known hosts in the seed.
 func JoinApi() func(echo.Context) error {
 	return func(c echo.Context) (err error) {
 		var (
-			sd   *seed.Seed
-			path string
+			sd      *seed.Seed
+			path    string
+			hostStr string
+			host    seed.Host
 		)
+		hostStr = c.QueryParam("host")
+		if len(hostStr) == 0 {
+			return c.String(http.StatusBadRequest, "need host query param")
+		}
+		if host, err = seed.ParseHost(hostStr); err != nil {
+			return c.String(http.StatusBadRequest, fmt.Sprintf("bad host query param %s", err))
+		}
 		path = c.QueryParam("path")
 		if len(path) == 0 {
-			return c.String(http.StatusNotFound, "need path query param")
+			return c.String(http.StatusBadRequest, "need path query param")
 		}
 		cleanPath := filepath.Clean(path)
-		if val, ok := sds.Load(cleanPath); ok {
-			sd = val.(*seed.Seed)
-		} else {
+		if val, ok := sds.Load(cleanPath); !ok {
 			return c.String(http.StatusNotFound, fmt.Sprintf("seed for path: %s not found", cleanPath))
+		} else {
+			sd = val.(*seed.Seed)
+			sd.Add(host)
+			return c.JSON(http.StatusOK, sd.GetAllHosts())
 		}
-		return c.JSON(http.StatusOK, sd)
 	}
-
 }
 
 func sendBlock(blockId int64, count int64, sd *seed.Seed, root string, respWriter writeFlusher) (err error) {

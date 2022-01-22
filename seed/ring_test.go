@@ -79,3 +79,38 @@ func TestLocator(t *testing.T) {
 		So(ring.GetAllHosts(), ShouldHaveLength, 0)
 	})
 }
+
+func TestParseHost(t *testing.T) {
+	Convey("parse IPv4 host", t, func() {
+		h, err := ParseHost("127.0.0.1:10001")
+		So(err, ShouldBeNil)
+		So(h, ShouldResemble, Host{
+			IP:   [4]byte{127, 0, 0, 1},
+			Port: 10001,
+		})
+	})
+	Convey("parse IPv6 host", t, func() {
+		h, err := ParseHost("[::1]:10001")
+		So(err, ShouldNotBeNil)
+		So(h, ShouldResemble, Host{
+			IP:   [4]byte{0, 0, 0, 0},
+			Port: 0,
+		})
+	})
+	Convey("parse bad host", t, func() {
+		h, err := ParseHost("127.0.0.1:1000001")
+		So(err, ShouldNotBeNil)
+		So(h, ShouldResemble, Host{
+			IP:   [4]byte{0, 0, 0, 0},
+			Port: 0,
+		})
+	})
+	Convey("parse bad host", t, func() {
+		h, err := ParseHost("1270.0.1:1000001")
+		So(err, ShouldNotBeNil)
+		So(h, ShouldResemble, Host{
+			IP:   [4]byte{0, 0, 0, 0},
+			Port: 0,
+		})
+	})
+}

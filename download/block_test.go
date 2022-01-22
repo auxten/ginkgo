@@ -52,6 +52,18 @@ func TestBlockDownloader_DownBlock(t *testing.T) {
 	})
 }
 
+//func TestJoin(t *testing.T) {
+//	e := echo.New()
+//	e.GET("/api/seed", fileserv.SeedApi("../test"))
+//	e.GET("/api/join", fileserv.JoinApi())
+//	go e.Start("127.0.0.1:0")
+//	defer e.Close()
+//	time.Sleep(time.Second)
+//	addr := e.ListenerAddr()
+//	bd := &BlockDownloader{}
+//	sd, _ := bd.GetSeed(addr.String(), "./", 10)
+//}
+
 func TestBlockDownloader_WriteBlock(t *testing.T) {
 	e := echo.New()
 	e.GET("/api/seed", fileserv.SeedApi("../test"))

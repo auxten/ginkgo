@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/crc32"
 	"hash/fnv"
+	"net/netip"
 	"os"
 	"sync"
 	"time"
@@ -22,6 +23,8 @@ type Seed struct {
 	Blocks     []*Block `json:"blocks"`
 	BlockSize  int64    `json:"blockSize"`
 	VNodeCount uint8    `json:"vnodeCount"`
+	// Hosts are only updated before Marshal
+	Hosts []Host `json:"hosts"`
 	//InitFileIdx   int      `json:"initFileIdx"`
 	//InitBlockIdx  int      `json:"initBlockIdx"`
 	TotalSize int64 `json:"totalSize"`
@@ -56,6 +59,22 @@ type Block struct {
 
 func (h Host) String() string {
 	return fmt.Sprintf("%d.%d.%d.%d:%d", h.IP[0], h.IP[1], h.IP[2], h.IP[3], h.Port)
+}
+
+// ParseHost parses "IPv4:Port"
+func ParseHost(hStr string) (Host, error) {
+	if ipPort, err := netip.ParseAddrPort(hStr); err != nil {
+		return Host{}, err
+	} else {
+		if !ipPort.Addr().Is4() {
+			return Host{}, fmt.Errorf("only IPv4 addresses")
+		}
+		ipBytes, _ := ipPort.Addr().MarshalBinary()
+		return Host{
+			IP:   [4]byte{ipBytes[0], ipBytes[1], ipBytes[2], ipBytes[3]},
+			Port: ipPort.Port(),
+		}, nil
+	}
 }
 
 // Hash uses HashCrc which has better uniformity
