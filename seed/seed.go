@@ -48,6 +48,11 @@ type Host struct {
 	Port uint16  `json:"port"`
 }
 
+type HostPath struct {
+	Host string `json:"host" form:"host" query:"host"`
+	Path string `json:"path" form:"path" query:"path"`
+}
+
 type Block struct {
 	Size        int64              `json:"size"`
 	StartFile   int                `json:"startFile"`

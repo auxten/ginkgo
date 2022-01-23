@@ -73,7 +73,7 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.GET("/api/seed", fileserv.SeedApi(root))
-	e.GET("/api/join", fileserv.JoinApi())
+	e.POST("/api/join", fileserv.JoinApi())
 	e.GET("/api/block", fileserv.BlockApi(root))
 
 	fileserv.ServFiles(e, root)

@@ -1,6 +1,7 @@
 package download
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/auxten/ginkgo/seed"
 	"github.com/auxten/ginkgo/srcdest"
+	log "github.com/sirupsen/logrus"
 )
 
 type BlockDownloader struct {
@@ -43,6 +45,41 @@ func (down *BlockDownloader) DownBlock(seed *seed.Seed, host string, blockId int
 
 	r = resp.Body
 	return
+}
+
+func (down *BlockDownloader) BroadcastJoin(host seed.Host, path string, target string) (err error) {
+	down.Do(func() {
+		down.client = &http.Client{}
+	})
+	var (
+		req  *http.Request
+		resp *http.Response
+	)
+
+	data, _ := json.Marshal(&seed.HostPath{
+		Host: host.String(),
+		Path: path,
+	})
+
+	req, _ = http.NewRequest("POST",
+		fmt.Sprintf("http://%s/api/join", target),
+		bytes.NewReader(data),
+	)
+	req.Header.Set("Content-Type", "application/json")
+
+	if resp, err = down.client.Do(req); err != nil {
+		return
+	}
+	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode == http.StatusOK {
+		return nil
+	} else {
+		return fmt.Errorf(resp.Status)
+	}
 }
 
 func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (s *seed.Seed, err error) {
@@ -76,6 +113,14 @@ func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (
 		return
 	}
 
+	for _, h := range s.Hosts {
+		if h == down.MyHost {
+			continue
+		}
+		if er := down.BroadcastJoin(down.MyHost, uri, h.String()); er != nil {
+			log.Infof("broadcast join to %s failed: %v", host, er)
+		}
+	}
 	return
 }
 

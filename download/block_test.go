@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/auxten/ginkgo/fileserv"
+	"github.com/auxten/ginkgo/seed"
 	"github.com/labstack/echo/v4"
 	. "github.com/smartystreets/goconvey/convey"
 )
@@ -52,17 +53,52 @@ func TestBlockDownloader_DownBlock(t *testing.T) {
 	})
 }
 
-//func TestJoin(t *testing.T) {
-//	e := echo.New()
-//	e.GET("/api/seed", fileserv.SeedApi("../test"))
-//	e.GET("/api/join", fileserv.JoinApi())
-//	go e.Start("127.0.0.1:0")
-//	defer e.Close()
-//	time.Sleep(time.Second)
-//	addr := e.ListenerAddr()
-//	bd := &BlockDownloader{}
-//	sd, _ := bd.GetSeed(addr.String(), "./", 10)
-//}
+func TestJoin(t *testing.T) {
+	var (
+		hostPath = new(seed.HostPath)
+		err      error
+		dir      = "./dir1"
+	)
+
+	e1 := echo.New()
+	e1.GET("/api/seed", fileserv.SeedApi("../test"))
+	e1.POST("/api/join", fileserv.JoinApi())
+	go e1.Start("127.0.0.1:0")
+	defer e1.Close()
+	e2 := echo.New()
+	e2.POST("/api/join", func(c echo.Context) error {
+		return c.Bind(hostPath)
+	})
+	go e2.Start("127.0.0.1:0")
+	defer e2.Close()
+	time.Sleep(time.Second)
+	addr1 := e1.ListenerAddr()
+	host1, _ := seed.ParseHost(addr1.String())
+	addr2 := e2.ListenerAddr()
+	host2, _ := seed.ParseHost(addr2.String())
+
+	bd := &BlockDownloader{MyHost: host1}
+	// trigger make seed
+	bd.GetSeed(addr1.String(), dir, 10)
+
+	bd.BroadcastJoin(host2, dir, addr1.String())
+
+	sd, _ := bd.GetSeed(addr1.String(), dir, 10)
+	if len(sd.Hosts) != 2 {
+		t.Errorf("expect 2 host, got %s", sd.Hosts)
+	}
+	if hostPath.Host != host1.String() {
+		t.Errorf("expect host %s, got %s", host1, hostPath.Host)
+	}
+	if hostPath.Path != dir {
+		t.Errorf("expect path %s, got %s", dir, hostPath.Path)
+	}
+
+	err = bd.BroadcastJoin(host2, "./notExist", addr1.String())
+	if err.Error() != "404 Not Found" {
+		t.Errorf("expect error got %s", err.Error())
+	}
+}
 
 func TestBlockDownloader_WriteBlock(t *testing.T) {
 	e := echo.New()

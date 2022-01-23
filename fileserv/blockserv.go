@@ -149,23 +149,25 @@ func BlockApi(root string) func(echo.Context) error {
 func JoinApi() func(echo.Context) error {
 	return func(c echo.Context) (err error) {
 		var (
-			sd      *seed.Seed
-			path    string
-			hostStr string
-			host    seed.Host
+			sd       *seed.Seed
+			host     seed.Host
+			hostPath = new(seed.HostPath)
 		)
-		hostStr = c.QueryParam("host")
-		if len(hostStr) == 0 {
+		if err = c.Bind(hostPath); err != nil {
+			return c.String(http.StatusBadRequest, err.Error())
+		}
+
+		if len(hostPath.Host) == 0 {
 			return c.String(http.StatusBadRequest, "need host query param")
 		}
-		if host, err = seed.ParseHost(hostStr); err != nil {
+		if host, err = seed.ParseHost(hostPath.Host); err != nil {
 			return c.String(http.StatusBadRequest, fmt.Sprintf("bad host query param %s", err))
 		}
-		path = c.QueryParam("path")
-		if len(path) == 0 {
+		if len(hostPath.Path) == 0 {
 			return c.String(http.StatusBadRequest, "need path query param")
 		}
-		cleanPath := filepath.Clean(path)
+
+		cleanPath := filepath.Clean(hostPath.Path)
 		if val, ok := sds.Load(cleanPath); !ok {
 			return c.String(http.StatusNotFound, fmt.Sprintf("seed for path: %s not found", cleanPath))
 		} else {
