@@ -13,16 +13,20 @@ import (
 )
 
 var (
-	root  string
-	addr  string
-	debug bool
-	mode  string
+	root    string
+	addr    string
+	srcUri  string
+	destUri string
+	port    int
+	debug   bool
+	mode    string
 )
 
 func init() {
 	flag.StringVar(&root, "root", "./", "Data files server root")
 	flag.StringVar(&addr, "addr", ":2120", "Data files output dir and also http static root")
 	flag.BoolVar(&debug, "debug", false, "Verbose log for all")
+	flag.IntVar(&port, "p", 2120, "Source Host port, like `-P` of scp")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr,
@@ -50,6 +54,8 @@ func parseFlags() {
 		mode = "server"
 	} else if argc == 2 { // client mode
 		mode = "client"
+		srcUri = flag.Arg(0)
+		destUri = flag.Arg(1)
 	} else {
 		flag.Usage()
 		os.Exit(1)
@@ -72,6 +78,11 @@ func main() {
 
 	e.Use(middleware.Recover())
 
+	if mode == "client" {
+		os.Stat(destUri)
+	} else if mode == "server" {
+
+	}
 	e.GET("/api/seed", fileserv.SeedApi(root))
 	e.POST("/api/join", fileserv.JoinApi())
 	e.GET("/api/block", fileserv.BlockApi(root))

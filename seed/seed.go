@@ -9,6 +9,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/auxten/ginkgo/srcdest"
 )
 
 var (
@@ -109,4 +111,42 @@ func (h Host) HashSha(vIndex byte) uint32 {
 	hout := fnv.New32a()
 	hout.Write(hash.Sum(nil))
 	return hout.Sum32()
+}
+
+func (sd *Seed) Localize(cmdSrcPath string, cmdDestPath string) (err error) {
+	var (
+		srcType  srcdest.PathType
+		destType srcdest.PathType
+		fInfo    os.FileInfo
+	)
+	if sd.Files[0].Size >= 0 {
+		srcType = srcdest.FileType
+	} else if sd.Files[0].Size == -1 {
+		srcType = srcdest.DirType
+	} else {
+		return fmt.Errorf("src root path type %d is not supported", sd.Files[0].Size)
+	}
+
+	if fInfo, err = os.Stat(cmdDestPath); err != nil {
+		if err == os.ErrNotExist {
+			destType = srcdest.NotExist
+		} else {
+			return
+		}
+	} else if fInfo.IsDir() {
+		destType = srcdest.DirType
+	} else if fInfo.Mode().IsRegular() {
+		destType = srcdest.FileType
+	} else {
+		return fmt.Errorf("dest path type %s is not supported", fInfo.Mode().Type().String())
+	}
+
+	for i := range sd.Files {
+		sd.Files[i].LocalPath, err = srcdest.NormalizeDestPath(cmdSrcPath, cmdDestPath, srcType, destType, sd.Files[i].Path)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }

@@ -116,7 +116,7 @@ func TestBlockDownloader_WriteBlock(t *testing.T) {
 		defer os.RemoveAll(dir) // clean up
 		sd, err := bd.GetSeed(addr.String(), "./", 10)
 		So(err, ShouldBeNil)
-		err = LocalizeSeed(sd, "./", dir)
+		err = sd.Localize("./", dir)
 		So(err, ShouldBeNil)
 		r, err := bd.DownBlock(sd, addr.String(), 0, 1)
 		So(err, ShouldBeNil)
@@ -139,7 +139,7 @@ func TestBlockDownloader_WriteBlock(t *testing.T) {
 		//defer os.RemoveAll(dir) // clean up
 		sd, err := bd.GetSeed(addr.String(), "./", 10)
 		So(err, ShouldBeNil)
-		err = LocalizeSeed(sd, "./", dir)
+		err = sd.Localize("./", dir)
 		So(err, ShouldBeNil)
 		r, err := bd.DownBlock(sd, addr.String(), 0, -1)
 		So(err, ShouldBeNil)
@@ -166,7 +166,7 @@ func TestBlockDownloader_WriteBlock(t *testing.T) {
 		defer os.RemoveAll(dir) // clean up
 		sd, err := bd.GetSeed(addr.String(), "./", 10)
 		So(err, ShouldBeNil)
-		err = LocalizeSeed(sd, "./", dir)
+		err = sd.Localize("./", dir)
 		So(err, ShouldBeNil)
 		r, err := bd.DownBlock(sd, addr.String(), 1, 3)
 		So(err, ShouldBeNil)
