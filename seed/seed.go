@@ -38,9 +38,10 @@ type File struct {
 	//Size of file, -1 for dir, -2 for symbol link
 	Size int64 `json:"size"`
 	//SymPath if symbol link target path
-	SymPath  string `json:"symPath"`
-	Path     string `json:"path"`
-	CheckSum []byte `json:"checkSum"`
+	SymPath   string `json:"symPath"`
+	Path      string `json:"path"`
+	LocalPath string `json:"-"`
+	CheckSum  []byte `json:"checkSum"`
 }
 
 type Host struct {

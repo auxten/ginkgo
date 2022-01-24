@@ -82,7 +82,7 @@ func (down *BlockDownloader) BroadcastJoin(host seed.Host, path string, target s
 	}
 }
 
-func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (s *seed.Seed, err error) {
+func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (sd *seed.Seed, err error) {
 	down.Do(func() {
 		down.client = &http.Client{}
 	})
@@ -108,12 +108,12 @@ func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (
 		return
 	}
 
-	s = new(seed.Seed)
-	if err = json.Unmarshal(body, s); err != nil {
+	sd = new(seed.Seed)
+	if err = json.Unmarshal(body, sd); err != nil {
 		return
 	}
 
-	for _, h := range s.Hosts {
+	for _, h := range sd.Hosts {
 		if h == down.MyHost {
 			continue
 		}
@@ -124,17 +124,11 @@ func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (
 	return
 }
 
-func (down *BlockDownloader) WriteBlock(
-	cmdSrcPath string, cmdDestPath string, sd *seed.Seed, r io.ReadCloser, blockId int64, count int64,
-) (err error) {
-
+func LocalizeSeed(sd *seed.Seed, cmdSrcPath string, cmdDestPath string) (err error) {
 	var (
-		totalSize    int64
-		totalWritten int64
-		srcType      srcdest.PathType
-		destType     srcdest.PathType
-		fInfo        os.FileInfo
-		bIdx         = blockId
+		srcType  srcdest.PathType
+		destType srcdest.PathType
+		fInfo    os.FileInfo
 	)
 	if sd.Files[0].Size >= 0 {
 		srcType = srcdest.FileType
@@ -157,6 +151,23 @@ func (down *BlockDownloader) WriteBlock(
 	} else {
 		return fmt.Errorf("dest path type %s is not supported", fInfo.Mode().Type().String())
 	}
+
+	for i := range sd.Files {
+		sd.Files[i].LocalPath, err = srcdest.NormalizeDestPath(cmdSrcPath, cmdDestPath, srcType, destType, sd.Files[i].Path)
+		if err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func (down *BlockDownloader) WriteBlock(sd *seed.Seed, r io.ReadCloser, blockId int64, count int64) (err error) {
+	var (
+		totalSize    int64
+		totalWritten int64
+		bIdx         = blockId
+	)
 
 	if blockId+count > int64(len(sd.Blocks)) {
 		return fmt.Errorf("block count cnt %d out of range", count)
@@ -184,10 +195,7 @@ func (down *BlockDownloader) WriteBlock(
 		)
 
 		sFile := sd.Files[fIdx]
-		destPath, err = srcdest.NormalizeDestPath(cmdSrcPath, cmdDestPath, srcType, destType, sFile.Path)
-		if err != nil {
-			return
-		}
+		destPath = sFile.LocalPath
 
 		//Add u+w permission
 		if sFile.Size == -1 {
