@@ -1,9 +1,13 @@
 package seed
 
 import (
+	"io/ioutil"
+	"os"
+	"path"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestHost_Hash(t *testing.T) {
@@ -99,6 +103,41 @@ func TestHost_String(t *testing.T) {
 		}
 		if h.String() != "10.20.30.110:8081" {
 			t.Fatal()
+		}
+	})
+}
+
+func TestSeed_TouchAll(t *testing.T) {
+	Convey("ensure touch all", t, func() {
+		dir, err := ioutil.TempDir("", "touchAll")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(dir) // clean up
+		err = os.Chdir(dir)
+		So(err, ShouldBeNil)
+		sd := Seed{
+			Files: []*File{
+				{LocalPath: "./dir", Size: -1},
+				{LocalPath: "./dir/dir1", Size: -1},
+				{LocalPath: "./dir/dir1/emptyFile", Size: 0},
+				{LocalPath: "./dir/dir1/file1", Size: 4},
+				{LocalPath: "./dir/dir1/link", Size: -1, SymPath: "file1"},
+			},
+		}
+		err = sd.TouchAll()
+		So(err, ShouldBeNil)
+		fd, err := os.OpenFile("./dir/dir1/file1", os.O_WRONLY, 0644)
+		So(err, ShouldBeNil)
+		n, err := fd.Write([]byte("1234"))
+		So(err, ShouldBeNil)
+		So(n, ShouldEqual, 4)
+		err = fd.Close()
+		So(err, ShouldBeNil)
+
+		sd2, err := MakeSeed("./dir", 10)
+		So(err, ShouldBeNil)
+		for i := range sd2.Files {
+			So(sd2.Files[i].Path, ShouldResemble, path.Clean(sd.Files[i].LocalPath))
+			So(sd2.Files[i].Size, ShouldResemble, sd.Files[i].Size)
 		}
 	})
 }

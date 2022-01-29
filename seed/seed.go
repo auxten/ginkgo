@@ -29,7 +29,8 @@ type Seed struct {
 	Hosts []Host `json:"hosts"`
 	//InitFileIdx   int      `json:"initFileIdx"`
 	//InitBlockIdx  int      `json:"initBlockIdx"`
-	TotalSize int64 `json:"totalSize"`
+	TotalSize    int64 `json:"totalSize"`
+	TotalWritten int64 `json:"-"`
 	//TmpSize       int64    `json:"tmpSize"`
 	//LastInitBlock int64    `json:"lastInitBlock"`
 }
@@ -128,7 +129,7 @@ func (sd *Seed) Localize(cmdSrcPath string, cmdDestPath string) (err error) {
 	}
 
 	if fInfo, err = os.Stat(cmdDestPath); err != nil {
-		if err == os.ErrNotExist {
+		if os.IsNotExist(err) {
 			destType = srcdest.NotExist
 		} else {
 			return
@@ -148,5 +149,34 @@ func (sd *Seed) Localize(cmdSrcPath string, cmdDestPath string) (err error) {
 		}
 	}
 
+	return
+}
+
+// TouchAll make all directory and all files including symbol links and empty files.
+// THIS Must be called after Localize
+func (sd *Seed) TouchAll() (err error) {
+	for _, file := range sd.Files {
+		if file.Size >= 0 {
+			var fd *os.File
+			fd, err = os.OpenFile(file.LocalPath, os.O_CREATE, file.Mode.Perm()|0200)
+			if err != nil && !os.IsExist(err) {
+				return
+			} else {
+				if err = fd.Close(); err != nil {
+					return
+				}
+			}
+		} else if file.Size == -1 {
+			if err = os.MkdirAll(file.LocalPath, file.Mode.Perm()|0700); err != nil {
+				return
+			}
+
+		} else if file.Size == -2 {
+			err = os.Symlink(file.SymPath, file.LocalPath)
+			if err != nil && !os.IsExist(err) {
+				return
+			}
+		}
+	}
 	return
 }
