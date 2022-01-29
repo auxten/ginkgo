@@ -79,6 +79,10 @@ func SeedApi(root string) func(echo.Context) error {
 }
 
 func BlockApi(root string) func(echo.Context) error {
+	if er := os.Chdir(root); er != nil {
+		log.Fatal(er)
+	}
+
 	return func(c echo.Context) (err error) {
 		var (
 			path    string
@@ -206,9 +210,8 @@ func sendBlock(blockId int64, count int64, sd *seed.Seed, root string, respWrite
 		)
 
 		sFile := sd.Files[fIdx]
-		jailedPath := filepath.Join(root, sFile.Path)
 
-		if fd, err = os.Open(jailedPath); err != nil {
+		if fd, err = os.Open(sFile.LocalPath); err != nil {
 			return
 		}
 		defer fd.Close()

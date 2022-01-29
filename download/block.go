@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 
 	"github.com/auxten/ginkgo/seed"
 	log "github.com/sirupsen/logrus"
@@ -117,21 +118,21 @@ func (down *BlockDownloader) GetSeed(host string, uri string, blockSize int64) (
 			continue
 		}
 		if er := down.BroadcastJoin(down.MyHost, uri, h.String()); er != nil {
-			log.Infof("broadcast join to %s failed: %v", host, er)
+			log.Infof("broadcast join to %s failed: %v", h, er)
 		}
 	}
 	return
 }
 
-func (down *BlockDownloader) WriteBlock(sd *seed.Seed, r io.ReadCloser, blockId int64, count int64) (err error) {
+func (down *BlockDownloader) WriteBlock(sd *seed.Seed, r io.ReadCloser, blockId int64, count int64) (totalWritten int64, err error) {
 	var (
-		totalSize    int64
-		totalWritten int64
-		bIdx         = blockId
+		totalSize int64
+		bIdx      = blockId
 	)
 
 	if blockId+count > int64(len(sd.Blocks)) {
-		return fmt.Errorf("block count cnt %d out of range", count)
+		err = fmt.Errorf("block count cnt %d out of range", count)
+		return
 	}
 
 	if count <= 0 {
@@ -202,6 +203,7 @@ func (down *BlockDownloader) WriteBlock(sd *seed.Seed, r io.ReadCloser, blockId 
 				return
 			}
 			totalWritten += wrote
+			atomic.AddInt64(&sd.TotalWritten, wrote)
 			// mark block as written
 			for ; totalWritten >= (bIdx-blockId+1)*sd.BlockSize; bIdx++ {
 				sd.Blocks[bIdx].Done = true

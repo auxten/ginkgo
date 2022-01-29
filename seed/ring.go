@@ -1,6 +1,7 @@
 package seed
 
 import (
+	"sort"
 	"time"
 )
 
@@ -10,7 +11,21 @@ func (sd *Seed) GetBlockIndex(host Host) []uint32 {
 	for i := uint8(0); i < sd.VNodeCount; i++ {
 		ret[i] = host.Hash(i) % size
 	}
-	return ret
+	// sort ret increasing order
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i] < ret[j]
+	})
+
+	j := 1
+	n := len(ret)
+	for i := 1; i < n; i++ {
+		if ret[i] != ret[i-1] {
+			ret[j] = ret[i]
+			j++
+		}
+	}
+
+	return ret[0:j]
 }
 
 func (sd *Seed) Add(host Host) {
@@ -51,12 +66,12 @@ func (sd *Seed) GetAllHosts() []Host {
 // As the golang map is not deterministic on iteration, when multiple hosts hashed
 // onto the same block the LocateBlock returned hosts are also not deterministic
 // which is good for load balancing.
-func (sd *Seed) LocateBlock(blockId int, n int) []Host {
+func (sd *Seed) LocateBlock(blockId int64, n int) []Host {
 	hosts := make([]Host, 0, n)
 	sd.RLock()
 	defer sd.RUnlock()
-	for i := blockId; i < blockId+len(sd.Blocks); i++ {
-		idx := i % len(sd.Blocks)
+	for i := blockId + int64(len(sd.Blocks)); i > blockId; i-- {
+		idx := i % int64(len(sd.Blocks))
 		for h, _ := range sd.Blocks[idx].Hosts {
 			hosts = SortDeDup(append(hosts, h))
 			if len(hosts) >= n {

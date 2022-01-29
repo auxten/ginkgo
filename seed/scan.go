@@ -63,12 +63,13 @@ func getWalkFunc(s *Seed) fs.WalkDirFunc {
 		}
 
 		seed.Files = append(seed.Files, &File{
-			mtime:    fInfo.ModTime(),
-			Mode:     fInfo.Mode(),
-			Size:     size,
-			SymPath:  symPath,
-			Path:     path,
-			CheckSum: nil,
+			mtime:     fInfo.ModTime(),
+			Mode:      fInfo.Mode(),
+			Size:      size,
+			SymPath:   symPath,
+			Path:      path,
+			LocalPath: path,
+			CheckSum:  nil,
 		})
 
 		if size > 0 {
