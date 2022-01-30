@@ -199,9 +199,9 @@ func (down *BlockDownloader) WriteBlock(sd *seed.Seed, r io.ReadCloser, blockId 
 			if wrote, err = io.CopyN(fd, r, toWrite); err != nil {
 				return
 			}
-			if err = fd.Sync(); err != nil {
-				return
-			}
+			//if err = fd.Sync(); err != nil {
+			//	return
+			//}
 			totalWritten += wrote
 			atomic.AddInt64(&sd.TotalWritten, wrote)
 			// mark block as written

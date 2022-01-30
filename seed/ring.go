@@ -6,6 +6,7 @@ import (
 )
 
 func (sd *Seed) GetBlockIndex(host Host) []uint32 {
+	//TODO: make indexes distribute evenly
 	ret := make([]uint32, sd.VNodeCount)
 	size := uint32(len(sd.Blocks))
 	for i := uint8(0); i < sd.VNodeCount; i++ {

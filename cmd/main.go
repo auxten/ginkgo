@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/auxten/ginkgo/download"
@@ -141,33 +142,55 @@ func main() {
 		if err = sd.Localize(srcPath, destPath); err != nil {
 			log.Fatalf("Localize failed: %v", err)
 		}
+		if err = sd.TouchAll(); err != nil {
+			log.Fatalf("TouchAll failed: %v", err)
+		}
 		blockIndexes := sd.GetBlockIndex(myHost)
-		for i, blkIdx := range blockIndexes {
-			go func() {
-				startIdx := int64(blkIdx)
-				endIdx := int64(blockIndexes[(i+1)%len(blockIndexes)])
+		for i := range blockIndexes {
+			go func(i int) {
+				var (
+					startIdx = int64(blockIndexes[i])
+					endIdx   = int64(blockIndexes[(i+1)%len(blockIndexes)])
+					count    int64
+				)
+				defer func() {
+					// check if all done
+					if atomic.LoadInt64(&sd.TotalWritten) == sd.TotalSize {
+						finished.Done()
+						return
+					}
+				}()
 				log.Debugf("downloading block %d:%d", startIdx, endIdx)
-			PartialDownLoop:
+				//PartialDownLoop:
 				for {
 					hosts := sd.LocateBlock(startIdx, 3)
 					// Try srcHost at last
 					hosts = append(hosts, srcHost)
 					for j, host := range hosts {
-						r, er := bd.DownBlock(sd, host.String(), startIdx, -1)
+						if endIdx == startIdx {
+							if len(sd.Blocks) == 1 {
+								count = 1
+							} else {
+								return
+							}
+						} else if endIdx > startIdx {
+							count = endIdx - startIdx
+						} else {
+							count = -1
+						}
+
+						r, er := bd.DownBlock(sd, host.String(), startIdx, count)
 						if er == nil {
 							defer r.Close()
-							wrote, er2 := bd.WriteBlock(sd, r, startIdx, -1)
+							wrote, er2 := bd.WriteBlock(sd, r, startIdx, count)
 							if wrote > 0 {
 								for sd.Blocks[startIdx].Done && startIdx != endIdx {
 									startIdx = (startIdx + 1) % int64(len(sd.Blocks))
 								}
 								if startIdx == endIdx {
-									// check if all done
-									if sd.TotalWritten == sd.TotalSize {
-										finished.Done()
-									}
+									return
 								} else {
-									continue PartialDownLoop
+									break
 								}
 							} else if er2 != nil {
 								if j == len(hosts)-1 {
@@ -176,12 +199,12 @@ func main() {
 							}
 						} else {
 							if j == len(hosts)-1 {
-								log.Fatalf("download block %d failed: %v", startIdx, er)
+								log.Fatalf("download block %d end %d count %d failed: %v", startIdx, endIdx, count, er)
 							}
 						}
 					}
 				}
-			}()
+			}(i)
 		}
 		finished.Wait()
 		//TODO: broadcast LEAVE
