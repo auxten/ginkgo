@@ -139,7 +139,7 @@ func BlockApi(root string) func(echo.Context) error {
 
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEOctetStream)
 		respWriter := c.Response()
-
+		log.Debugf("sendBlock id %d count %d", blockId, count)
 		if err = sendBlock(blockId, count, sd, root, respWriter); err != nil {
 			return c.String(http.StatusInternalServerError, err.Error())
 		}

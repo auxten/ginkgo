@@ -146,6 +146,9 @@ func main() {
 			log.Fatalf("TouchAll failed: %v", err)
 		}
 		blockIndexes := sd.GetBlockIndex(myHost)
+		if len(blockIndexes) == 1 {
+			blockIndexes[0] = 0
+		}
 		for i := range blockIndexes {
 			go func(i int) {
 				var (
@@ -157,8 +160,8 @@ func main() {
 					// check if all done
 					if atomic.LoadInt64(&sd.TotalWritten) == sd.TotalSize {
 						finished.Done()
-						return
 					}
+					return
 				}()
 				log.Debugf("downloading block %d:%d", startIdx, endIdx)
 				//PartialDownLoop:
@@ -168,8 +171,8 @@ func main() {
 					hosts = append(hosts, srcHost)
 					for j, host := range hosts {
 						if endIdx == startIdx {
-							if len(sd.Blocks) == 1 {
-								count = 1
+							if len(blockIndexes) == 1 {
+								count = -1
 							} else {
 								return
 							}
