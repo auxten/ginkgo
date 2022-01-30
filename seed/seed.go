@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	DefaultBlockSize int64 = 1 * 1024
+	DefaultBlockSize int64 = 4 * 1024 * 1024
 	//DefaultBlockSize int64 = 4 * 1024
 )
 
